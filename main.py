@@ -3,6 +3,7 @@ import pygame
 import random
 from PIL import Image
 from Point import *
+from Segment import *
 import rt
 import math
 import threading
@@ -21,7 +22,6 @@ def pathtrace():
 
 
 def raytrace():
-    '''
     # Raytraces the scene progessively
     while True:
         # random point in the image
@@ -41,17 +41,18 @@ def raytrace():
             length = rt.length(dir)
             # normalized distance to source
             #length2 = rt.length(rt.normalize(dir))
+            '''
             for seg in segments:
                             # check if ray intersects with segment
-                            dist = rt.raySegmentIntersect(point, dir, seg[0], seg[1])
+                            dist = rt.raySegmentIntersect(point, dir, seg.a, seg.b)
                             # if intersection, or if intersection is closer than light source
                             if dist > 0 and length2 > dist:
                                 free = False
                                 break
-
+            '''
             free = True
             for seg in segments:
-                dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg[0], seg[1])
+                dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
                 if dist != -1 and dist < length:
                     free = False
                     break
@@ -69,8 +70,8 @@ def raytrace():
                 pixel += values
 
             # average pixel value and assign
-            px[int(point.x)][int(point.y)] = pixel // len(source)
-            '''
+            px[int(point.x)][int(point.y)] = pixel // len(sources)
+
 def getFrame():
     # grabs the current image and returns it
     pixels = np.roll(px, (1, 2), (0, 1))
@@ -110,21 +111,21 @@ light = np.array([1, 1, 1])
 #Rombo, cuadrado, triangulo
 segments = [
     #bordes
-    ([Point(50, 50), Point(450, 50)]),
-    ([Point(450, 50), Point(450, 450)]),
-    ([Point(450, 450), Point(50, 450)]),
-    ([Point(50, 450), Point(50, 50)]),
+    (Segment(Point(50, 50), Point(450, 50))),
+    #([Point(450, 50), Point(450, 450)]),
+    #([Point(450, 450), Point(50, 450)]),
+    #([Point(50, 450), Point(50, 50)]),
 
 
-    ([Point(100, 250), Point(200, 250)]),
-    ([Point(100, 250), Point(150, 350)]),
-    ([Point(150, 350), Point(250, 350)]),
-    ([Point(200, 250), Point(250, 350)]),
+    (Segment(Point(100, 250), Point(200, 250)))
+    #([Point(100, 250), Point(150, 350)]),
+    #([Point(150, 350), Point(250, 350)]),
+    #([Point(200, 250), Point(250, 350)]),
 
-    ([Point(390, 100), Point(440, 100)]),
-    ([Point(440, 100), Point(440, 150)]),
-    ([Point(440, 150), Point(390, 150)]),
-    ([Point(390, 150), Point(390, 100)])
+    #([Point(390, 100), Point(440, 100)]),
+    #([Point(440, 100), Point(440, 150)]),
+    #([Point(440, 150), Point(390, 150)]),
+    #([Point(390, 150), Point(390, 100)])
 ]
 
 '''segments = [
@@ -140,7 +141,7 @@ segments = [
 ]'''
 
 # thread setup
-t = threading.Thread(target=pathtrace)  # f being the function that tells how the ball should move
+t = threading.Thread(target=raytrace)  # f being the function that tells how the ball should move
 t.setDaemon(True)  # Alternatively, you can use "t.daemon = True"
 t.start()
 
