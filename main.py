@@ -14,8 +14,9 @@ def pathtrace():
             dir = source - point
 
 
-'''
+
 def raytrace():
+    '''
     # Raytraces the scene progessively
     while True:
         # random point in the image
