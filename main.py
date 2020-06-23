@@ -112,20 +112,19 @@ light = np.array([1, 1, 1])
 segments = [
     #bordes
     (Segment(Point(50, 50), Point(450, 50))),
-    #([Point(450, 50), Point(450, 450)]),
-    #([Point(450, 450), Point(50, 450)]),
-    #([Point(50, 450), Point(50, 50)]),
+    (Segment(Point(450, 50), Point(450, 450))),
+    (Segment(Point(450, 450), Point(50, 450))),
+    (Segment(Point(50, 450), Point(50, 50))),
 
+    (Segment(Point(100, 250), Point(200, 250))),
+    (Segment(Point(100, 250), Point(150, 350))),
+    (Segment(Point(150, 350), Point(250, 350))),
+    (Segment(Point(200, 250), Point(250, 350))),
 
-    (Segment(Point(100, 250), Point(200, 250)))
-    #([Point(100, 250), Point(150, 350)]),
-    #([Point(150, 350), Point(250, 350)]),
-    #([Point(200, 250), Point(250, 350)]),
-
-    #([Point(390, 100), Point(440, 100)]),
-    #([Point(440, 100), Point(440, 150)]),
-    #([Point(440, 150), Point(390, 150)]),
-    #([Point(390, 150), Point(390, 100)])
+    (Segment(Point(390, 100), Point(440, 100))),
+    (Segment(Point(440, 100), Point(440, 150))),
+    (Segment(Point(440, 150), Point(390, 150))),
+    (Segment(Point(390, 150), Point(390, 100)))
 ]
 
 '''segments = [
