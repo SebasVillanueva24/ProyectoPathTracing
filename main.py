@@ -10,9 +10,14 @@ import threading
 def pathtrace():
     while True:
         point = Point(random.uniform(0,500), random.uniform(0,500))
-        for source in sources:
-            dir = source - point
 
+        pixel = 0
+
+        values = values = (ref[int(point.y)][int(point.x)])[:3]
+
+        pixel += values
+
+        px[int(point.x)][int(point.y)] = pixel//len(sources)
 
 
 def raytrace():
@@ -135,7 +140,7 @@ segments = [
 ]'''
 
 # thread setup
-t = threading.Thread(target=raytrace)  # f being the function that tells how the ball should move
+t = threading.Thread(target=pathtrace)  # f being the function that tells how the ball should move
 t.setDaemon(True)  # Alternatively, you can use "t.daemon = True"
 t.start()
 
