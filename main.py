@@ -8,17 +8,44 @@ import rt
 import math
 import threading
 
-def pathtrace():
+def iluminacionIndirecta():
+    #Funcion recursiva
+    #Tirar rayos desde la fuente a todas las direcciones
+    #Calcular intensidad que pega con el segmento y convertirlo en una fuente de luz la cual va a tirar rayos en todas las direcciones desde ese pto, varias veces
+    #Puede imitar ilum directa
+
+def iluminacionDirecta():
     while True:
         point = Point(random.uniform(0,500), random.uniform(0,500))
 
         pixel = 0
 
-        values = values = (ref[int(point.y)][int(point.x)])[:3]
+        for source in sources:
+            dir = source - point
 
-        pixel += values
+            length = rt.length(dir)
 
-        px[int(point.x)][int(point.y)] = pixel//len(sources)
+            free = True
+            for seg in segments:
+                dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+                if dist != -1 and dist < length:
+                    free = False
+                    break
+
+            if free:
+                intensity = (1 - (length / 500)) ** 2
+                # print(len)
+                # intensity = max(0, min(intensity, 255))
+                values = (ref[int(point.y)][int(point.x)])[:3]
+                # combine color, light source and light color
+                values = values * intensity * light
+
+                # add all light sources
+                pixel += values
+
+            # average pixel value and assign
+            px[int(point.x)][int(point.y)] = pixel // len(sources)
+
 
 
 def raytrace():
@@ -97,9 +124,9 @@ px = np.array(i)
 # reference image for background color
 im_file = Image.open("fondo2.png")
 ref = np.array(im_file)
-
+#Point(30, 200), Point(310, 300)
 # light positions
-sources = [Point(20, 200), Point(310, 300),Point(250, 50)]
+sources = [Point(415, 125)]
 '''sources = []
 for i in range(80, 100):
     sources.append(Point(i+50, 200))'''
@@ -111,17 +138,17 @@ light = np.array([1, 1, 1])
 #Rombo, cuadrado, triangulo
 segments = [
     #bordes
-    (Segment(Point(50, 50), Point(450, 50))),
-    (Segment(Point(450, 50), Point(450, 450))),
-    (Segment(Point(450, 450), Point(50, 450))),
-    (Segment(Point(50, 450), Point(50, 50))),
+    #(Segment(Point(25, 25), Point(425, 25))),
+    #(Segment(Point(425, 25), Point(425, 425))),
+    #(Segment(Point(425, 425), Point(25, 425))),
+    #(Segment(Point(25, 425), Point(25, 25))),
 
     (Segment(Point(100, 250), Point(200, 250))),
     (Segment(Point(100, 250), Point(150, 350))),
     (Segment(Point(150, 350), Point(250, 350))),
     (Segment(Point(200, 250), Point(250, 350))),
 
-    (Segment(Point(390, 100), Point(440, 100))),
+    #(Segment(Point(390, 100), Point(440, 100))),
     (Segment(Point(440, 100), Point(440, 150))),
     (Segment(Point(440, 150), Point(390, 150))),
     (Segment(Point(390, 150), Point(390, 100)))
@@ -140,7 +167,7 @@ segments = [
 ]'''
 
 # thread setup
-t = threading.Thread(target=raytrace)  # f being the function that tells how the ball should move
+t = threading.Thread(target=pathtrace)  # f being the function that tells how the ball should move
 t.setDaemon(True)  # Alternatively, you can use "t.daemon = True"
 t.start()
 
