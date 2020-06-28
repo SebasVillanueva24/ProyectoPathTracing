@@ -8,19 +8,133 @@ import rt
 import math
 import threading
 
+def rebote(sources,lights,tipo,ver):
+
+    if tipo == False:
+
+        if ver == False:
+
+            for c in range(200):
+                point = Point(random.uniform(0, 500), random.uniform(sources.y+1, 500))
+
+                pixel = 0
+
+                dir = sources - point
+                length = rt.length(dir)
+                free = True
+                for seg in segments:
+                    dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+                    if dist != -1 and dist < length:
+                        free = False
+                        break
+
+                if free:
+                    intensity = (1 - (length / 500)) ** 2
+                    # print(len)
+                    # intensity = max(0, min(intensity, 255))
+                    values = (ref[int(point.y)][int(point.x)])[:3]
+                    # combine color, light source and light color
+                    values = values * intensity * lights
+
+                    # add all light sources
+                    pixel += values
+
+                # average pixel value and assign
+                px[int(point.x)][int(point.y)] = pixel
+
+
+
+
+
+
+
+
 def iluminacionIndirecta():
     #Funcion recursiva
     #Tirar rayos desde la fuente a todas las direcciones
     #Calcular intensidad que pega con el segmento y convertirlo en una fuente de luz la cual va a tirar rayos en todas las direcciones desde ese pto, varias veces
     #Puede imitar ilum directa
 
-def iluminacionDirecta():
+   # while True:
+        #Esto debe ser un for por cada uno de los pixeles del segmento
+
+        print(segments[6].a)
+
+        for p in range(segments[6].a.x,segments[6].b.x):
+
+            point = Point(p, segments[6].a.y)
+
+            pixel = 0  # px[int(point.x)][int(point.y)]
+
+            for i in range(0, len(sources)):
+                source = sources[i]
+
+                dir = source - point
+
+                length = rt.length(dir)
+
+                free = True
+                for seg in segments:
+
+                    dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+                    if dist != -1 and dist < length:
+                        if rt.intersectionPoint(point, rt.normalize(dir), dist).x != point.x and rt.intersectionPoint(
+                                point, rt.normalize(dir), dist).y != point.y:
+                            free = False
+                            print("son diferentes")
+                        else:
+                            intensity = (1 - (length / 500)) ** 2
+                            # print(len)
+                            # intensity = max(0, min(intensity, 255))
+                            values = (ref[int(point.y)][int(point.x)])[:3]
+                            # combine color, light source and light color
+                            values = values * intensity * lights[i]
+
+                            # add all light sources
+                            pixel += values
+
+                            pixel = pixel // len(sources)
+
+                            #px[int(point.x)][int(point.y)] = pixel // len(sources)
+
+                            pSources = Point(int(point.x), int(point.y))
+
+                            # light color
+                            pLights = [np.array([1, 1, 1])]
+
+
+                            rebote(pSources, pLights,segments[6].especular,False)
+
+
+                        break
+
+
+
+
+
+
+
+
+def iluminacionDirecta():  # voy a hacer cambios
     while True:
         point = Point(random.uniform(0,500), random.uniform(0,500))
 
-        pixel = 0
+        if (px[int(point.x)][int(point.y)][:3] == 0).all():
+            print("negro")
+            pixel = 0
+            negro = True
 
-        for source in sources:
+        else:
+            print("color")
+            pixel = px[int(point.x)][int(point.y)][:3]
+            negro = False
+
+
+        #for source in sources:
+        for i in range(0,len(sources)):
+            source = sources[i]
+
             dir = source - point
 
             length = rt.length(dir)
@@ -38,15 +152,24 @@ def iluminacionDirecta():
                 # intensity = max(0, min(intensity, 255))
                 values = (ref[int(point.y)][int(point.x)])[:3]
                 # combine color, light source and light color
-                values = values * intensity * light
+                values = values * intensity * lights[i]
 
+                #print(values)
                 # add all light sources
-                pixel += values
+
+                if negro:
+                    pixel += values
+                else:
+                    pixel = pixel + values
 
             # average pixel value and assign
             px[int(point.x)][int(point.y)] = pixel // len(sources)
 
 
+def iluminacionTotal():
+
+    iluminacionIndirecta()
+    iluminacionDirecta()
 
 def raytrace():
     # Raytraces the scene progessively
@@ -122,16 +245,14 @@ i = Image.new("RGB", (500, 500), (0, 0, 0))
 px = np.array(i)
 
 # reference image for background color
-im_file = Image.open("fondo2.png")
+im_file = Image.open("fondo3.png")
 ref = np.array(im_file)
-#Point(30, 200), Point(310, 300)
+
 # light positions
-sources = [Point(415, 125)]
-'''sources = []
-for i in range(80, 100):
-    sources.append(Point(i+50, 200))'''
+sources = [Point(415, 125),Point(30, 200), Point(310, 300)]
+
 # light color
-light = np.array([1, 1, 1])
+lights = [np.array([0.65, 0.086, 0.79]),np.array([1, 1, 1]),np.array([0.18, 0.94, 0.80])] # cambiar color
 # light = np.array([1, 1, 1])
 
 # warning, point order affects intersection test!!
@@ -148,9 +269,9 @@ segments = [
     (Segment(Point(150, 350), Point(250, 350))),
     (Segment(Point(200, 250), Point(250, 350))),
 
-    #(Segment(Point(390, 100), Point(440, 100))),
+    (Segment(Point(390, 100), Point(440, 100))),
     (Segment(Point(440, 100), Point(440, 150))),
-    (Segment(Point(440, 150), Point(390, 150))),
+    (Segment(Point(390, 150), Point(440, 150))),# abajo
     (Segment(Point(390, 150), Point(390, 100)))
 ]
 
@@ -167,7 +288,7 @@ segments = [
 ]'''
 
 # thread setup
-t = threading.Thread(target=pathtrace)  # f being the function that tells how the ball should move
+t = threading.Thread(target=iluminacionTotal)  # f being the function that tells how the ball should move
 t.setDaemon(True)  # Alternatively, you can use "t.daemon = True"
 t.start()
 
