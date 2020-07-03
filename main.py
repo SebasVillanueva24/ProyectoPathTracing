@@ -8,13 +8,54 @@ import rt
 import math
 import threading
 
-def rebote(sources,lights,tipo,ver,hemis):
+def reboteEspecular(sources,lights,ver,hemis,dir):
+    dir.x = dir.x * -1
 
-    if tipo == False:
+    point = sources
 
+    sigo = True
+
+    point.x = point.x + dir.x
+    point.y = point.y + dir.y
+
+    print(point)
+        #if ((point.x > 0 and point.x < 500) and (point.y > 0 and point.y < 500)):
+            #sigo = False
+
+    pixel = 0
+
+    length = rt.length(dir)
+    free = True
+    for seg in segments:
+        dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+        if dist != -1 and dist < length:
+            free = False
+            break
+
+    if free:
+        intensity = (1 - (length / 500)) ** 2
+        # print(len)
+        # intensity = max(0, min(intensity, 255))
+        values = (ref[int(point.y)][int(point.x)])[:3]
+        # combine color, light source and light color
+        values = values * intensity * lights
+
+        # add all light sources
+        pixel += values
+
+    # average pixel value and assign
+    # print(str(point.x)+" ++ "+str(point.y))
+    px[int(point.x)][int(point.y)] = pixel
+
+
+def rebote(sources,lights,tipo,ver,hemis,originalLight):
+
+    if tipo == "difuso":
+        cantPtos = random.randint(25, 50)
         if ver == False:
 
-            for c in range(40):
+            for c in range(cantPtos):
 
                 # mirar la posicion de la luz
 
@@ -51,8 +92,7 @@ def rebote(sources,lights,tipo,ver,hemis):
                 px[int(point.x)][int(point.y)] = pixel
 
         else:
-
-            for c in range(40):
+            for c in range(cantPtos):
 
                 # mirar la posicion de la luz
 
@@ -87,13 +127,28 @@ def rebote(sources,lights,tipo,ver,hemis):
                 # average pixel value and assign
                 #print(str(point.x)+" ++ "+str(point.y))
                 px[int(point.x)][int(point.y)] = pixel
+    elif tipo == "especular":
+        if ver:
+            return
+        else:
+            if hemis:
+                v1 = originalLight - sources
+                diff = sources.y - originalLight.y
+
+                normal = Point(sources.x, diff)
+                v2 = normal - sources
+
+                cos = [rt.cosAngle(originalLight, normal, sources)]
+                angle = np.arccos(cos)
+
+                v3 = Point(math.cos(angle), math.sin(angle))
+                aPintar = v3 + sources
 
 
 
 
 
-
-def iluminacion2():
+def iluminacionIndirecta():
 
     for segmento in segments:
 
@@ -111,6 +166,7 @@ def iluminacion2():
                     source = sources[i]
 
                     dir = source - point
+                    print(dir)
 
                     length = rt.length(dir)
 
@@ -122,9 +178,8 @@ def iluminacion2():
                             if rt.intersectionPoint(point, rt.normalize(dir),
                                                     dist).x != point.x and rt.intersectionPoint(
                                     point, rt.normalize(dir), dist).y != point.y:
-                                free = False
-                                print("son diferentes")
-                                print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                if seg.tipo != "transparente":
+                                    free = False
                                 break
 
                     if free:
@@ -132,12 +187,7 @@ def iluminacion2():
                             dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
 
                             if dist != -1 and dist < length:
-                                if rt.intersectionPoint(point, rt.normalize(dir),
-                                                        dist).x != point.x and rt.intersectionPoint(
-                                        point, rt.normalize(dir), dist).y != point.y:
-                                    # free = False
-                                    print("son diferentes")
-                                    print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                if rt.intersectionPoint(point, rt.normalize(dir),dist).x != point.x and rt.intersectionPoint(point, rt.normalize(dir), dist).y != point.y:
                                     break
                                 else:
 
@@ -161,9 +211,16 @@ def iluminacion2():
                                     pLights = [np.array([1, 1, 1])]
 
                                     if (source.x > int(point.x)):
-                                        rebote(pSources, pLights, segmento.especular, True, True)
+                                        if segmento.tipo == "especular":
+                                           reboteEspecular(pSources,pLights,False,True,dir)
+                                        else:
+                                            rebote(pSources, pLights, segmento.tipo, True, True,source)
                                     else:
-                                        rebote(pSources, pLights, segmento.especular, True, False)
+                                        if segmento.tipo == "especular":
+                                            reboteEspecular(pSources, pLights, False, False, dir)
+                                        else:
+                                            rebote(pSources, pLights, segmento.tipo, True, False, source)
+
                     if not free:
                         break
                 if not free:
@@ -194,9 +251,8 @@ def iluminacion2():
                         if dist != -1 and dist < length:
                             if rt.intersectionPoint(point, rt.normalize(dir), dist).x != point.x and rt.intersectionPoint(
                                     point, rt.normalize(dir), dist).y != point.y:
-                                free = False
-                                print("son diferentes")
-                                print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                if seg.tipo != "transparente":
+                                    free = False
                                 break
 
 
@@ -207,9 +263,6 @@ def iluminacion2():
                             if dist != -1 and dist < length:
                                 if rt.intersectionPoint(point, rt.normalize(dir), dist).x != point.x and rt.intersectionPoint(
                                         point, rt.normalize(dir), dist).y != point.y:
-                                    #free = False
-                                    print("son diferentes")
-                                    print(rt.intersectionPoint(point, rt.normalize(dir), dist))
                                     break
                                 else:
 
@@ -234,83 +287,19 @@ def iluminacion2():
 
 
                                     if(source.y<int(point.y)):
-                                        rebote(pSources, pLights, segmento.especular, False, True)
+                                        if segmento.tipo == "especular":
+                                            reboteEspecular(pSources, pLights, False, True, dir)
+                                        else:
+                                            rebote(pSources, pLights, segmento.tipo, True, True, source)
                                     else:
-                                        rebote(pSources, pLights, segmento.especular, False, False)
+                                        if segmento.tipo == "especular":
+                                            reboteEspecular(pSources, pLights, False, False, dir)
+                                        else:
+                                            rebote(pSources, pLights, segmento.tipo, True, False, source)
                     if not free:
                         break
                 if not free:
                     break
-
-
-
-
-def iluminacionIndirecta():
-    #Funcion recursiva
-    #Tirar rayos desde la fuente a todas las direcciones
-    #Calcular intensidad que pega con el segmento y convertirlo en una fuente de luz la cual va a tirar rayos en todas las direcciones desde ese pto, varias veces
-    #Puede imitar ilum directa
-
-   # while True:
-        #Esto debe ser un for por cada uno de los pixeles del segmento
-
-        print(segments[6].a)
-
-        for p in range(segments[6].a.x,segments[6].b.x):
-
-            point = Point(p, segments[6].a.y)
-
-            pixel = 0  # px[int(point.x)][int(point.y)]
-
-            for i in range(0, len(sources)):
-                source = sources[i]
-
-                dir = source - point
-
-                length = rt.length(dir)
-
-                free = True
-                for seg in segments:
-
-                    dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
-
-                    if dist != -1 and dist < length:
-                        if rt.intersectionPoint(point, rt.normalize(dir), dist).x != point.x and rt.intersectionPoint(
-                                point, rt.normalize(dir), dist).y != point.y:
-                            free = False
-                            print("son diferentes")
-                        else:
-                            intensity = (1 - (length / 500)) ** 2
-                            # print(len)
-                            # intensity = max(0, min(intensity, 255))
-                            values = (ref[int(point.y)][int(point.x)])[:3]
-                            # combine color, light source and light color
-                            values = values * intensity * lights[i]
-
-                            # add all light sources
-                            pixel += values
-
-                            pixel = pixel // len(sources)
-
-                            #px[int(point.x)][int(point.y)] = pixel // len(sources)
-
-                            pSources = Point(int(point.x), int(point.y))
-
-                            # light color
-                            pLights = [np.array([1, 1, 1])]
-
-
-                            rebote(pSources, pLights,segments[6].especular,False)
-
-
-                        break
-
-
-
-
-
-
-
 
 def iluminacionDirecta():  # voy a hacer cambios
     while True:
@@ -339,7 +328,8 @@ def iluminacionDirecta():  # voy a hacer cambios
             for seg in segments:
                 dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
                 if dist != -1 and dist < length:
-                    free = False
+                    if seg.tipo != "transparente":
+                        free = False
                     break
 
             if free:
@@ -363,68 +353,13 @@ def iluminacionDirecta():  # voy a hacer cambios
 
 
 def iluminacionTotal():
-
-    #iluminacionIndirecta()
-    iluminacion2()
-    #iluminacionDirecta()
-
-
-def raytrace():
-    # Raytraces the scene progessively
-    while True:
-        # random point in the image
-        point = Point(random.uniform(0, 500), random.uniform(0, 500))
-        # pixel color
-        pixel = 0
-
-        for source in sources:
-            # calculates direction to light source
-
-            dir = source - point
-            # add jitter
-            # dir.x += random.uniform(0, 25)
-            # dir.y += random.uniform(0, 25)
-
-            # distance between point and light source
-            length = rt.length(dir)
-            # normalized distance to source
-            #length2 = rt.length(rt.normalize(dir))
-            '''
-            for seg in segments:
-                            # check if ray intersects with segment
-                            dist = rt.raySegmentIntersect(point, dir, seg.a, seg.b)
-                            # if intersection, or if intersection is closer than light source
-                            if dist > 0 and length2 > dist:
-                                free = False
-                                break
-            '''
-            free = True
-            for seg in segments:
-                dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
-                if dist != -1 and dist < length:
-                    free = False
-                    break
-
-
-            if free:
-                intensity = (1 - (length / 500)) ** 2
-                # print(len)
-                # intensity = max(0, min(intensity, 255))
-                values = (ref[int(point.y)][int(point.x)])[:3]
-                # combine color, light source and light color
-                values = values * intensity * light
-
-                # add all light sources
-                pixel += values
-
-            # average pixel value and assign
-            px[int(point.x)][int(point.y)] = pixel // len(sources)
+    iluminacionIndirecta()
+    iluminacionDirecta()
 
 def getFrame():
     # grabs the current image and returns it
     pixels = np.roll(px, (1, 2), (0, 1))
     return pixels
-
 
 # pygame stuff
 h, w = 550, 550
@@ -447,7 +382,7 @@ im_file = Image.open("fondo3.png")
 ref = np.array(im_file)
 
 # light positions
-sources = [Point(415, 125),Point(30, 200), Point(310, 300)]
+sources = [Point(415, 125),Point(30, 200), Point(310, 410)]
 
 # light color
 lights = [np.array([0.65, 0.086, 0.79]),np.array([1, 1, 1]),np.array([0.18, 0.94, 0.80])] # cambiar color
@@ -456,34 +391,17 @@ lights = [np.array([0.65, 0.086, 0.79]),np.array([1, 1, 1]),np.array([0.18, 0.94
 # warning, point order affects intersection test!!
 #Rombo, cuadrado, triangulo
 segments = [
-    #bordes
-    #(Segment(Point(25, 25), Point(425, 25))),
-    #(Segment(Point(425, 25), Point(425, 425))),
-    #(Segment(Point(425, 425), Point(25, 425))),
-    #(Segment(Point(25, 425), Point(25, 25))),
+    (Segment(Point(100, 250), Point(200, 250), "especular", False)),
+    (Segment(Point(200, 250), Point(200, 350), "difuso", True)),
+    (Segment(Point(200, 350), Point(100, 350), "difuso", False )),
+    (Segment(Point(100, 350), Point(100, 250), "difuso", True)),
 
-    (Segment(Point(100, 250), Point(200, 250), False, False)),
-    #(Segment(Point(100, 250), Point(150, 350), False, True)), # diagonal
-    #(Segment(Point(150, 350), Point(250, 350), False, False )),
-    #(Segment(Point(200, 250), Point(250, 350), False, True)),#diagonal
-
-    (Segment(Point(390, 100), Point(440, 100), False, False )),
-    (Segment(Point(440, 100), Point(440, 150), False, True )),
-    (Segment(Point(390, 150), Point(440, 150), False, False)),# abajo
-    #(Segment(Point(390, 150), Point(390, 100), False, True ))
+    #cuadrado morado
+    (Segment(Point(390, 100), Point(440, 100), "difuso", False )),
+    (Segment(Point(440, 100), Point(440, 150), "difuso", True )),
+    (Segment(Point(390, 150), Point(440, 150), "difuso", False)),# abajo
+    (Segment(Point(390, 150), Point(390, 100), "transparente", True )) #tapa izq
 ]
-
-'''segments = [
-    ([Point(180, 135), Point(215, 135)]),
-    ([Point(285, 135), Point(320, 135)]),
-    ([Point(320, 135), Point(320, 280)]),
-    ([Point(320, 320), Point(320, 355)]),
-    ([Point(320, 355), Point(215, 355)]),
-    ([Point(180, 390), Point(180, 286)]),
-    ([Point(180, 286), Point(140, 286)]),
-    ([Point(320, 320), Point(360, 320)]),
-    ([Point(180, 250), Point(180, 135)]),
-]'''
 
 # thread setup
 t = threading.Thread(target=iluminacionTotal)  # f being the function that tells how the ball should move
