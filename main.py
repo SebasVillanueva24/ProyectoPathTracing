@@ -13,7 +13,6 @@ def rebote(sources,lights,tipo,ver):
     if tipo == False:
 
         if ver == False:
-
             for c in range(200):
                 point = Point(random.uniform(0, 500), random.uniform(sources.y+1, 500))
 
