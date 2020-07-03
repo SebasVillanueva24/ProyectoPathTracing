@@ -8,14 +8,20 @@ import rt
 import math
 import threading
 
-def rebote(sources,lights,tipo,ver):
+def rebote(sources,lights,tipo,ver,hemis):
 
     if tipo == False:
 
         if ver == False:
 
-            for c in range(200):
-                point = Point(random.uniform(0, 500), random.uniform(sources.y+1, 500))
+            for c in range(40):
+
+                # mirar la posicion de la luz
+
+                if hemis:
+                    point = Point(random.uniform(1, 500), random.uniform(1, sources.y - 1))
+                else:
+                    point = Point(random.uniform(1, 500), random.uniform(sources.y + 1, 500))
 
                 pixel = 0
 
@@ -24,6 +30,7 @@ def rebote(sources,lights,tipo,ver):
                 free = True
                 for seg in segments:
                     dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
                     if dist != -1 and dist < length:
                         free = False
                         break
@@ -40,11 +47,200 @@ def rebote(sources,lights,tipo,ver):
                     pixel += values
 
                 # average pixel value and assign
+                #print(str(point.x)+" ++ "+str(point.y))
+                px[int(point.x)][int(point.y)] = pixel
+
+        else:
+
+            for c in range(40):
+
+                # mirar la posicion de la luz
+
+                if hemis:
+                    point = Point(random.uniform(sources.x+1, 500), random.uniform(1, 500))
+                else:
+                    point = Point(random.uniform(1, sources.x-1), random.uniform(1, 500))
+
+                pixel = 0
+
+                dir = sources - point
+                length = rt.length(dir)
+                free = True
+                for seg in segments:
+                    dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+                    if dist != -1 and dist < length:
+                        free = False
+                        break
+
+                if free:
+                    intensity = (1 - (length / 500)) ** 2
+                    # print(len)
+                    # intensity = max(0, min(intensity, 255))
+                    values = (ref[int(point.y)][int(point.x)])[:3]
+                    # combine color, light source and light color
+                    values = values * intensity * lights
+
+                    # add all light sources
+                    pixel += values
+
+                # average pixel value and assign
+                #print(str(point.x)+" ++ "+str(point.y))
                 px[int(point.x)][int(point.y)] = pixel
 
 
 
 
+
+
+def iluminacion2():
+
+    for segmento in segments:
+
+        if(segmento.vertical):
+
+            free = True
+
+            for p in range(segmento.a.y, segmento.b.y):
+
+                point = Point(segmento.a.x, p)
+
+                pixel = 0  # px[int(point.x)][int(point.y)]
+
+                for i in range(0, len(sources)):
+                    source = sources[i]
+
+                    dir = source - point
+
+                    length = rt.length(dir)
+
+                    for seg in segments:
+
+                        dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+                        if dist != -1 and dist < length:
+                            if rt.intersectionPoint(point, rt.normalize(dir),
+                                                    dist).x != point.x and rt.intersectionPoint(
+                                    point, rt.normalize(dir), dist).y != point.y:
+                                free = False
+                                print("son diferentes")
+                                print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                break
+
+                    if free:
+                        for seg in segments:
+                            dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+                            if dist != -1 and dist < length:
+                                if rt.intersectionPoint(point, rt.normalize(dir),
+                                                        dist).x != point.x and rt.intersectionPoint(
+                                        point, rt.normalize(dir), dist).y != point.y:
+                                    # free = False
+                                    print("son diferentes")
+                                    print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                    break
+                                else:
+
+                                    intensity = (1 - (length / 500)) ** 2
+                                    # print(len)
+                                    # intensity = max(0, min(intensity, 255))
+                                    values = (ref[int(point.y)][int(point.x)])[:3]
+                                    # combine color, light source and light color
+                                    values = values * intensity * lights[i]
+
+                                    # add all light sources
+                                    pixel += values
+
+                                    pixel = pixel // len(sources)
+
+                                    # px[int(point.x)][int(point.y)] = pixel // len(sources)
+
+                                    pSources = Point(int(point.x), int(point.y))
+
+                                    # light color
+                                    pLights = [np.array([1, 1, 1])]
+
+                                    if (source.x > int(point.x)):
+                                        rebote(pSources, pLights, segmento.especular, True, True)
+                                    else:
+                                        rebote(pSources, pLights, segmento.especular, True, False)
+                    if not free:
+                        break
+                if not free:
+                    break
+
+
+        else:
+
+            free = True
+
+            for p in range(segmento.a.x,segmento.b.x):
+
+                point = Point(p, segmento.a.y)
+
+                pixel = 0  # px[int(point.x)][int(point.y)]
+
+                for i in range(0, len(sources)):
+                    source = sources[i]
+
+                    dir = source - point
+
+                    length = rt.length(dir)
+
+                    for seg in segments:
+
+                        dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+                        if dist != -1 and dist < length:
+                            if rt.intersectionPoint(point, rt.normalize(dir), dist).x != point.x and rt.intersectionPoint(
+                                    point, rt.normalize(dir), dist).y != point.y:
+                                free = False
+                                print("son diferentes")
+                                print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                break
+
+
+                    if free:
+                        for seg in segments:
+                            dist = rt.raySegmentIntersect(point, rt.normalize(dir), seg.a, seg.b)
+
+                            if dist != -1 and dist < length:
+                                if rt.intersectionPoint(point, rt.normalize(dir), dist).x != point.x and rt.intersectionPoint(
+                                        point, rt.normalize(dir), dist).y != point.y:
+                                    #free = False
+                                    print("son diferentes")
+                                    print(rt.intersectionPoint(point, rt.normalize(dir), dist))
+                                    break
+                                else:
+
+                                    intensity = (1 - (length / 500)) ** 2
+                                    # print(len)
+                                    # intensity = max(0, min(intensity, 255))
+                                    values = (ref[int(point.y)][int(point.x)])[:3]
+                                    # combine color, light source and light color
+                                    values = values * intensity * lights[i]
+
+                                    # add all light sources
+                                    pixel += values
+
+                                    pixel = pixel // len(sources)
+
+                                    # px[int(point.x)][int(point.y)] = pixel // len(sources)
+
+                                    pSources = Point(int(point.x), int(point.y))
+
+                                    # light color
+                                    pLights = [np.array([1, 1, 1])]
+
+
+                                    if(source.y<int(point.y)):
+                                        rebote(pSources, pLights, segmento.especular, False, True)
+                                    else:
+                                        rebote(pSources, pLights, segmento.especular, False, False)
+                    if not free:
+                        break
+                if not free:
+                    break
 
 
 
@@ -121,12 +317,12 @@ def iluminacionDirecta():  # voy a hacer cambios
         point = Point(random.uniform(0,500), random.uniform(0,500))
 
         if (px[int(point.x)][int(point.y)][:3] == 0).all():
-            print("negro")
+            #negro
             pixel = 0
             negro = True
 
         else:
-            print("color")
+            #color
             pixel = px[int(point.x)][int(point.y)][:3]
             negro = False
 
@@ -168,8 +364,10 @@ def iluminacionDirecta():  # voy a hacer cambios
 
 def iluminacionTotal():
 
-    iluminacionIndirecta()
-    iluminacionDirecta()
+    #iluminacionIndirecta()
+    iluminacion2()
+    #iluminacionDirecta()
+
 
 def raytrace():
     # Raytraces the scene progessively
@@ -264,15 +462,15 @@ segments = [
     #(Segment(Point(425, 425), Point(25, 425))),
     #(Segment(Point(25, 425), Point(25, 25))),
 
-    (Segment(Point(100, 250), Point(200, 250))),
-    (Segment(Point(100, 250), Point(150, 350))),
-    (Segment(Point(150, 350), Point(250, 350))),
-    (Segment(Point(200, 250), Point(250, 350))),
+    (Segment(Point(100, 250), Point(200, 250), False, False)),
+    #(Segment(Point(100, 250), Point(150, 350), False, True)), # diagonal
+    #(Segment(Point(150, 350), Point(250, 350), False, False )),
+    #(Segment(Point(200, 250), Point(250, 350), False, True)),#diagonal
 
-    (Segment(Point(390, 100), Point(440, 100))),
-    (Segment(Point(440, 100), Point(440, 150))),
-    (Segment(Point(390, 150), Point(440, 150))),# abajo
-    (Segment(Point(390, 150), Point(390, 100)))
+    (Segment(Point(390, 100), Point(440, 100), False, False )),
+    (Segment(Point(440, 100), Point(440, 150), False, True )),
+    (Segment(Point(390, 150), Point(440, 150), False, False)),# abajo
+    #(Segment(Point(390, 150), Point(390, 100), False, True ))
 ]
 
 '''segments = [
